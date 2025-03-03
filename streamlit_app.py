@@ -11,6 +11,9 @@ def get_litres_referencia(referencia, concepto):
     if not isinstance(referencia, str):
         return 0.0
     
+    # Convert reference to uppercase
+    referencia = referencia.upper()
+    
     def extract_suffix(ref):
         match = re.search(r'(\d+)[CI]?$', ref)
         return match.group(1) if match else ""
@@ -26,15 +29,12 @@ def get_litres_referencia(referencia, concepto):
         '33C': 0.33,
         '44C': 0.44,
         '37': 0.37,
+        '20I': 20.0,  # Specific case for 20I
+        '30I': 30.0,  # Specific case for 30I
+        '33C': 0.33,  # Specific case for 33C
     }
     
-    if suffix in mapping:
-        return mapping[suffix]
-    
-    if concepto and isinstance(concepto, str) and concepto.endswith('33C'):
-        return 0.33
-    
-    return 0.0
+    return mapping.get(suffix, 0.0) if suffix else 0.0
 
 def procesar_xls(df):
     try:
@@ -55,24 +55,24 @@ def procesar_xls(df):
         for idx, row in df.iterrows():
             for col_idx, value in enumerate(row):
                 if pd.notnull(value):
-                    value_str = str(value).strip()
-                    if columnas['Almacén'] is None and 'Almacén' in value_str:
+                    value_str = str(value).strip().lower()
+                    if columnas['Almacén'] is None and 'almacén' in value_str:
                         columnas['Almacén'] = col_idx
-                    if columnas['Fecha'] is None and 'Fecha' in value_str:
+                    if columnas['Fecha'] is None and 'fecha' in value_str:
                         columnas['Fecha'] = col_idx
-                    if columnas['Referencia'] is None and 'Referencia' in value_str:
+                    if columnas['Referencia'] is None and 'referencia' in value_str:
                         columnas['Referencia'] = col_idx
-                    if columnas['Descripción'] is None and 'Descripción' in value_str:
+                    if columnas['Descripción'] is None and 'descripción' in value_str:
                         columnas['Descripción'] = col_idx
-                    if columnas['Concepto'] is None and 'Concepto' in value_str:
+                    if columnas['Concepto'] is None and 'concepto' in value_str:
                         columnas['Concepto'] = col_idx
-                    if columnas['Documento'] is None and 'Documento' in value_str:
+                    if columnas['Documento'] is None and 'documento' in value_str:
                         columnas['Documento'] = col_idx
-                    if columnas['Cliente / Prov.'] is None and 'Cliente / Prov.' in value_str:
+                    if columnas['Cliente / Prov.'] is None and 'cliente' in value_str and 'prov' in value_str:
                         columnas['Cliente / Prov.'] = col_idx
-                    if columnas['Cantidad'] is None and 'Cantidad' in value_str:
+                    if columnas['Cantidad'] is None and 'cantidad' in value_str:
                         columnas['Cantidad'] = col_idx
-                    if columnas['Precio'] is None and 'Precio' in value_str:
+                    if columnas['Precio'] is None and 'precio' in value_str:
                         columnas['Precio'] = col_idx
             
             if all(col is not None for col in columnas.values()):
@@ -87,7 +87,7 @@ def procesar_xls(df):
         temp_fila = None
         lot = None
         
-        header_pattern = re.compile(r'^(Movimientos:|Almacén|Página|Fecha|Referencia)', re.IGNORECASE)
+        header_pattern = re.compile(r'^(movimientos:|almacén|página|fecha|referencia)', re.IGNORECASE)
         
         for index, row in df.iterrows():
             if pd.isnull(row[columnas['Referencia']]):
@@ -135,7 +135,7 @@ def procesar_xls(df):
                 current_documento = row[columnas['Documento']]
                 
                 current_ref_col = columnas['Referencia']
-                current_ref = row[current_ref_col].strip() if pd.notnull(row[current_ref_col]) else ''
+                current_ref = str(row[current_ref_col]).strip().upper() if pd.notnull(row[current_ref_col]) else ''
 
                 lot = None
                 lot_found = False
@@ -153,17 +153,17 @@ def procesar_xls(df):
                         continue
                     
                     next_ref_col = columnas['Referencia']
-                    next_ref = next_row[next_ref_col].strip() if pd.notnull(next_row[next_ref_col]) else ''
+                    next_ref = str(next_row[next_ref_col]).strip().lower() if pd.notnull(next_row[next_ref_col]) else ''
 
-                    if next_ref != '' and next_ref != current_ref and not lot_found:
+                    if next_ref and next_ref.startswith('e') and next_ref != current_ref.lower() and not lot_found:
                         break
                     
                     local_lot = None
                     for col in range(df.shape[1]):
-                        lot_cell = str(next_row[col]).strip()
-                        match = re.search(r'\d{2}\s*-\s*\d{3}', lot_cell)
+                        lot_cell = str(next_row[col]).strip().upper()
+                        match = re.search(r'(\d{2}[-\s]\d{3})', lot_cell)
                         if match:
-                            local_lot = match.group().replace(" ", "")
+                            local_lot = re.sub(r'\s+', '', match.group(1))
                             break
                     
                     if local_lot:
@@ -214,10 +214,17 @@ def main():
     st.subheader("Procesar Archivos Excel")
     st.write("---")
 
-    uploaded_file = st.file_uploader("Sube un archivo Excel", type=["xlsx"])
+    uploaded_file = st.file_uploader("Sube un archivo Excel", type=["xls", "xlsx"])
 
     if uploaded_file:
-        df = pd.read_excel(uploaded_file, engine="openpyxl")
+        try:
+            if uploaded_file.name.endswith('.xls'):
+                df = pd.read_excel(uploaded_file, engine="xlrd")
+            else:
+                df = pd.read_excel(uploaded_file, engine="openpyxl")
+        except Exception as e:
+            st.error(f"Error al leer el archivo: {e}")
+            return
         
         if st.button("Procesar Datos"):
             df_processed = procesar_xls(df)
