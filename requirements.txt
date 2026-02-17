@@ -1,6 +1,6 @@
 pandas
 openpyxl
-streamlit
-
-
+streamlit==1.41.0
+altair==5.5.0   # or whatever latest 5.x is in 2026
 xlrd
+
