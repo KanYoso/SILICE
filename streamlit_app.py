@@ -188,8 +188,13 @@ def procesar_xls(df):
         
         df_final.dropna(subset=['Concepto'], inplace=True)
         df_final['Concepto'] = df_final['Concepto'].str.strip()
-        df_final = df_final[df_final['Concepto'].isin(['Salida por Factura', 'Entrada por abono en Factura'])]
         
+        # 1) Incluir también "Salida por intercambio"
+        df_final = df_final[df_final['Concepto'].isin(['Salida por Factura', 'Entrada por abono en Factura', 'Salida por intercambio'])]
+
+        # 2) Forzar Cliente=2734 SOLO para "Salida por intercambio"
+        df_final.loc[df_final['Concepto'].eq('Salida por intercambio'), 'Cliente / Prov.'] = 2734
+
         df_final = df_final[df_final['Descripción'].str.contains('ABV', case=False, na=False)]
         df_final = df_final[df_final['Referencia'].str.lower().str.startswith('e', na=False)]
         
@@ -239,7 +244,16 @@ def main():
                     st.metric("Registros sin LOTE", (df_processed['LOT'] == '').sum())
                 with col3:
                     st.metric("Total de Referencias Únicas", df_processed['Referencia'].nunique())
-                
+
+                # Mostrar KPIs
+                col4, col5, col6 = st.columns(3)
+                with col4:
+                    st.metric("Registros: Salida por Factura", (df_processed['Cliente / Prov.'] == 'Salida por Factura').sum())
+                with col5:
+                    st.metric("Registros: Entrada por abono en Factura", (df_processed['Cliente / Prov.'] == 'Entrada por abono en Factura').sum())
+                with col6:
+                    st.metric("Registros: Salida por intercambio", (df_processed['Cliente / Prov.'] == 'Salida por intercambio').sum())
+                    
                 st.subheader("Datos Procesados:")
                 st.data_editor(df_processed, width=1000)
                 
@@ -270,3 +284,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
