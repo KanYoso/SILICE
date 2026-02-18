@@ -193,7 +193,8 @@ def procesar_xls(df):
         df_final = df_final[df_final['Concepto'].isin(['Salida por Factura', 'Entrada por abono en Factura', 'Salida por Intercambio'])]
 
         # 2) Forzar Cliente=2734 SOLO para "Salida por Intercambio"
-        df_final = df_final.[df_final['Concepto'].eq('Salida por Intercambio'), 'Cliente / Prov.'] = 2734
+        mask_intercambio = df_final['Concepto'].str.strip().str.lower().eq('salida por intercambio')
+        df_final.loc[mask_intercambio, 'Cliente / Prov.'] = 2734
 
         df_final = df_final[df_final['Descripción'].str.contains('ABV', case=False, na=False)]
         df_final = df_final[df_final['Referencia'].str.lower().str.startswith('e', na=False)]
@@ -284,6 +285,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
 
