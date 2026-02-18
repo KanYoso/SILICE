@@ -189,11 +189,11 @@ def procesar_xls(df):
         df_final.dropna(subset=['Concepto'], inplace=True)
         df_final['Concepto'] = df_final['Concepto'].str.strip()
         
-        # 1) Incluir también "Salida por intercambio"
-        df_final = df_final[df_final['Concepto'].isin(['Salida por Factura', 'Entrada por abono en Factura', 'Salida por intercambio'])]
+        # 1) Incluir también "Salida por Intercambio"
+        df_final = df_final[df_final['Concepto'].isin(['Salida por Factura', 'Entrada por abono en Factura', 'Salida por Intercambio'])]
 
-        # 2) Forzar Cliente=2734 SOLO para "Salida por intercambio"
-        df_final.loc[df_final['Concepto'].eq('Salida por intercambio'), 'Cliente / Prov.'] = 2734
+        # 2) Forzar Cliente=2734 SOLO para "Salida por Intercambio"
+        df_final.loc[df_final['Concepto'].eq('Salida por Intercambio'), 'Cliente / Prov.'] = 2734
 
         df_final = df_final[df_final['Descripción'].str.contains('ABV', case=False, na=False)]
         df_final = df_final[df_final['Referencia'].str.lower().str.startswith('e', na=False)]
@@ -284,4 +284,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
