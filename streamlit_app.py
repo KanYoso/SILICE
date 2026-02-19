@@ -185,6 +185,17 @@ def procesar_xls(df):
                 }
         
         df_final = pd.DataFrame(filas_combinadas)
+
+        # debug
+        st.write("Conceptos detectados:")
+        st.write(df_final['Concepto'].value_counts())
+
+        st.subheader("Valores únicos de la columna Concepto (antes de filtrar)")
+        st.write(df_final['Concepto'].dropna().unique())
+
+        st.write("Intercambios antes de filtros:", df_final[df_final['Concepto'].str.contains('intercambio', case=False, na=False)].shape[0])
+        st.write("Intercambios antes filtros ABV/ref:", (df_final['Concepto'].str.lower() == 'salida por intercambio').sum())
+        # end debug
         
         df_final.dropna(subset=['Concepto'], inplace=True)
         df_final['Concepto'] = df_final['Concepto'].str.strip()
@@ -249,11 +260,11 @@ def main():
                 # Mostrar KPIs
                 col4, col5, col6 = st.columns(3)
                 with col4:
-                    st.metric("Registros: Salida por Factura", (df_processed['Cliente / Prov.'] == 'Salida por Factura').sum())
+                    st.metric("Registros: Salida por Factura", (df_processed['Concepto'].str.lower() == 'salida por factura').sum())
                 with col5:
-                    st.metric("Registros: Entrada por abono en Factura", (df_processed['Cliente / Prov.'] == 'Entrada por abono en Factura').sum())
+                    st.metric("Registros: Entrada por abono en Factura", (df_processed['Concepto'].str.lower() == 'entrada por abono en factura').sum())
                 with col6:
-                    st.metric("Registros: Salida por intercambio", (df_processed['Cliente / Prov.'] == 'Salida por intercambio').sum())
+                    st.metric("Registros: Salida por intercambio", (df_processed['Concepto'].str.lower() == 'salida por intercambio').sum())
                     
                 st.subheader("Datos Procesados:")
                 st.data_editor(df_processed, width=1000)
@@ -285,6 +296,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
 
