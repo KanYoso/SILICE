@@ -203,13 +203,27 @@ def procesar_xls(df):
         # 1) Incluir también "Salida por Intercambio"
         df_final = df_final[df_final['Concepto'].isin(['Salida por Factura', 'Entrada por abono en Factura', 'Salida por Intercambio'])]
 
+        
+        # Debug tras filtro de Concepto
+        df_tmp = df_final[df_final['Concepto'].str.contains('factura|intercambio', case=False, na=False)]
+        st.write("Tras filtro Concepto:", df_tmp.shape[0])
+
         # 2) Forzar Cliente=2734 SOLO para "Salida por Intercambio"
         mask_intercambio = df_final['Concepto'].str.strip().str.lower().eq('salida por intercambio')
         df_final.loc[mask_intercambio, 'Cliente / Prov.'] = 2734
 
         df_final = df_final[df_final['Descripción'].str.contains('ABV', case=False, na=False)]
+
+        # Debug Tras ABV
+        df_tmp = df_tmp[df_tmp['Descripción'].str.contains('ABV', case=False, na=False)]
+        st.write("Tras filtro ABV:", df_tmp.shape[0])
+
         df_final = df_final[df_final['Referencia'].str.lower().str.startswith('e', na=False)]
         
+        # Debug Tras referencia e
+        df_tmp = df_tmp[df_tmp['Referencia'].str.lower().str.startswith('e', na=False)]
+        st.write("Tras filtro Referencia e:", df_tmp.shape[0])
+
         df_final['LITRES'] = (df_final.apply(lambda row: get_litres_referencia(row['Referencia'], row['Concepto']), axis=1) * df_final['Cantidad']).abs()
         df_final['VALOR'] = (df_final['Cantidad'] * df_final['Precio']).abs()
         
@@ -296,6 +310,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
 
